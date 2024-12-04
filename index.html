@@ -1,0 +1,957 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Consulta de registros de Prioridades</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <style>
+        /* Reset básico */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #f0f2f5;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  margin: 0;
+}
+
+/* Estilos de Autenticação */
+.auth-container {
+  width: 100%;
+  max-width: 400px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  padding: 2rem;
+  box-shadow: 0 4px 6px #002060;
+}
+
+.auth-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 25px;
+}
+
+
+.auth-header h1 {
+  font-size: 24px;
+  color: #003366;
+  margin-bottom: 10px;
+}
+
+.form-group {
+  margin-bottom: 15px;
+  text-align: left;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 5px;
+  color: #333;
+  font-size: 14px;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: #003366;
+  box-shadow: 0 0 5px rgba(0, 51, 102, 0.3);
+}
+
+.auth-button {
+  width: 100%;
+  padding: 0.75rem;
+  background-color: #003366;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.auth-button:hover {
+  background-color: #004477;
+}
+
+.auth-link {
+  margin-top: 15px;
+  font-size: 14px;
+  color: #666;
+}
+
+.auth-link a {
+  color: #003366;
+  text-decoration: none;
+  font-weight: bold;
+}
+
+.auth-link a:hover {
+  text-decoration: underline;
+}
+
+.error-message {
+  color: red;
+  margin-bottom: 15px;
+  text-align: center;
+}
+
+/* Estilos do Container */
+.container {
+  width: 100%;
+  max-width: 600px;
+  padding: 2rem;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.dashboard {
+  width: 100vw;
+  height: 95vh;
+  max-width: 1500px;
+  background: white;
+  padding: 1vh 2vw;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+}
+
+.form-group {
+  margin-bottom: 1rem;
+}
+
+.form-control {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.btn {
+  width: 100%;
+  padding: 0.75rem;
+  background-color: #003366;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.btn:hover {
+  background-color: #004477;
+}
+
+.btn-secondary {
+  background-color: #6c757d;
+}
+
+#dashboard-page, #loading-page {
+  display: none;
+}
+
+.dashboard-header {
+  text-align: center;
+  margin-bottom: 2vh;
+  font-weight: bold;
+  font-size: 2.5vh;
+  color: black;
+}
+
+.controls {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 1vh;
+}
+
+.search-container {
+  display: flex;
+  flex-grow: 1;
+  margin-right: 1vw;
+}
+
+#searchInput {
+  flex-grow: 1;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  margin-right: 10px;
+}
+
+
+.table-container {
+  overflow-y: auto;
+  flex-grow: 1;
+  width: 100%;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 1.3vh;
+}
+
+th {
+  background-color: #003366;
+  color: white;
+  font-weight: 600;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+th, td {
+  padding: 1vh;
+  text-align: center;
+  border-bottom: 1px solid #ddd;
+}
+
+tr:hover {
+  background-color: #f8f9fa;
+}
+
+.loading {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.8);
+  display: none;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.loading-spinner {
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #4CAF50;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+#error-message {
+  color: red;
+  margin: 1vh 0;
+  text-align: center;
+}
+
+#lastUpdate {
+  font-size: 1.5vh;
+  color: #666;
+  margin: 1vh 0;
+  text-align: left;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+#fetchButton, #downloadButton, #logoutButton {
+  display: block;
+  padding: 10px 20px;
+  background-color: #003366;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+#fetchButton:disabled, #downloadButton:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
+
+
+.status-pendente {
+  background-color: yellow;
+  color: black;
+  border-radius: 10px;
+  text-align: center;
+  padding: 3px 8px;
+  display: inline-block;
+  font-weight: bold;
+  min-width: 80px;
+}
+
+.status-finalizado {
+  background-color: green;
+  color: white;
+  border-radius: 10px;
+  text-align: center;
+  padding: 3px 8px;
+  display: inline-block;
+  font-weight: bold;
+  min-width: 80px;
+}
+
+.status-cancelado {
+  background-color: #c44747;
+  color: white;
+  border-radius: 10px;
+  text-align: center;
+  padding: 3px 8px;
+  display: inline-block;
+  font-weight: bold;
+  min-width: 80px;
+}
+.logo {
+            width: 60px;
+            height: 60px;
+            margin-bottom: 1rem;
+        }
+
+        .auth-header h1 {
+        font-size: 24px;
+        color: #003366;
+        margin-bottom: 10px;
+    }
+
+    .auth-title {
+        font-size: 16px;
+        color: #666;
+        margin-bottom: 20px;
+        text-align: center;
+        line-height: 1.4;
+    }
+    </style>
+</head>
+<body>
+
+    <!-- Authentication Pages -->
+    <div id="auth-pages" class="auth-container">
+        <!-- Login Page -->
+        <div id="login-page" class="auth-card">
+            <div class="auth-header">
+                <p class="auth-title">Consulta de registros de Prioridades Bonston Scientific</p>
+                <svg class="logo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <path d="M12 16v-4M12 8h.01"/>
+                </svg>
+                <h1>Login</h1>
+        
+            </div>
+            <div id="login-error" class="error-message"></div>
+            <form id="login-form">
+                <div class="form-group">
+                    <label>E-mail</label>
+                    <input type="email" id="login-email" required>
+                </div>
+                <div class="form-group">
+                    <label>Senha</label>
+                    <input type="password" id="login-password" required>
+                </div>
+                <button type="submit" class="auth-button">Entrar</button>
+            </form>
+            <p class="auth-link">
+                Não tem uma conta? <a href="#" id="show-signup">Cadastre-se</a>
+            </p>
+        </div>
+    
+        <!-- Signup Page -->
+        <div id="signup-page" class="auth-card" style="display: none;">
+            <div class="auth-header">
+                <p class="auth-title">Consulta de registros de Prioridades Bonston Scientific</p>
+                <svg class="logo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <path d="M12 8v8M8 12h8"/>
+                </svg>
+                <h1>Cadastro</h1>
+            </div>
+            <div id="signup-error" class="error-message"></div>
+            <form id="signup-form">
+                <div class="form-group">
+                    <label>Nome Completo</label>
+                    <input type="text" id="signup-name" required>
+                </div>
+                <div class="form-group">
+                    <label>E-mail</label>
+                    <input type="email" id="signup-email" required>
+                </div>
+                <div class="form-group">
+                    <label>Senha</label>
+                    <input type="password" id="signup-password" required>
+                </div>
+                <div class="form-group">
+                    <label>Confirmar Senha</label>
+                    <input type="password" id="signup-confirm-password" required>
+                </div>
+                <button type="submit" class="auth-button">Cadastrar</button>
+            </form>
+            <p class="auth-link">
+                Já tem uma conta? <a href="#" id="show-login">Faça login</a>
+            </p>
+        </div>
+    </div>
+
+    <!-- Dashboard Page -->
+    <div id="dashboard-page" class="dashboard">
+        <div class="dashboard-header">
+            <h1>Consulta de registros de Prioridades Bonston Scientific</h1>
+        </div>
+        <div id="user-info" class="text-center mb-3"></div>
+        <div id="lastUpdate"></div>
+        <div id="error-message"></div>
+        
+        
+        <div class="controls">
+            <div class="search-container">
+                <input type="text" id="searchInput" placeholder="Pesquisar em todos os campos...">
+            </div>
+            <div class="action-buttons">
+                <button id="fetchButton">Atualizar registros</button>
+                <button id="downloadButton">Baixar CSV</button>
+                <button id="logoutButton">Sair</button>
+            </div>
+        </div>
+        
+        <div class="table-container" id="tableContainer">
+            <table id="registrosTable">
+                <thead>
+                    <tr id="tableHeader"></tr>
+                </thead>
+                <tbody id="tableBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Loading Page -->
+    <div id="loading-page" class="loading">
+        <div class="loading-spinner"></div>
+    </div>
+
+    <script>
+
+        // Configurações do Supabase 
+        const supabaseUrl = 'https://xrhktibidyspiunomaqp.supabase.co';
+        const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhyaGt0aWJpZHlzcGl1bm9tYXFwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzI0Njg4NzUsImV4cCI6MjA0ODA0NDg3NX0.1zrZ1hrCGT0djyz5vPENoR3GyJgmhhrWqoVthYEd5Rs';
+        
+        // Inicializar Supabase
+        const supabase = window.supabase.createClient(supabaseUrl, supabaseAnonKey);
+
+        // DOM Elements
+        const authPages = document.getElementById('auth-pages');
+        const loginPage = document.getElementById('login-page');
+        const signupPage = document.getElementById('signup-page');
+        const dashboardPage = document.getElementById('dashboard-page');
+        const loadingPage = document.getElementById('loading-page');
+
+        // Login Form
+        const loginForm = document.getElementById('login-form');
+        const loginEmail = document.getElementById('login-email');
+        const loginPassword = document.getElementById('login-password');
+        const loginError = document.getElementById('login-error');
+
+        // Signup Form
+        const signupForm = document.getElementById('signup-form');
+        const signupName = document.getElementById('signup-name');
+        const signupEmail = document.getElementById('signup-email');
+        const signupPassword = document.getElementById('signup-password');
+        const signupConfirmPassword = document.getElementById('signup-confirm-password');
+        const signupError = document.getElementById('signup-error');
+
+        // Dashboard Elements
+        const userInfo = document.getElementById('user-info');
+        const logoutButton = document.getElementById('logoutButton');
+
+        // Navigation Links
+        document.getElementById('show-signup').addEventListener('click', (e) => {
+            e.preventDefault();
+            loginPage.style.display = 'none';
+            signupPage.style.display = 'block';
+        });
+
+        document.getElementById('show-login').addEventListener('click', (e) => {
+            e.preventDefault();
+            signupPage.style.display = 'none';
+            loginPage.style.display = 'block';
+        });
+
+        // Authentication Functions
+        async function signUp(event) {
+            event.preventDefault();
+            signupError.textContent = '';
+
+            const name = signupName.value;
+            const email = signupEmail.value;
+            const password = signupPassword.value;
+            const confirmPassword = signupConfirmPassword.value;
+
+            // Validate password match
+            if (password !== confirmPassword) {
+                signupError.textContent = 'As senhas não coincidem';
+                return;
+            }
+
+            try {
+                const { data, error } = await supabase.auth.signUp({
+                    email,
+                    password,
+                    options: {
+                        data: {
+                            full_name: name
+                        }
+                    }
+                });
+
+                if (error) {
+                    throw error;
+                }
+
+                // If signup is successful
+                alert('Cadastro realizado com sucesso! Verifique seu e-mail para confirmação.');
+                signupPage.style.display = 'none';
+                loginPage.style.display = 'block';
+            } catch (error) {
+                signupError.textContent = error.message || 'Erro no cadastro';
+            }
+        }
+
+        async function login(event) {
+            event.preventDefault();
+            loginError.textContent = '';
+
+            const email = loginEmail.value;
+            const password = loginPassword.value;
+
+            try {
+                const { data, error } = await supabase.auth.signInWithPassword({
+                    email,
+                    password
+                });
+
+                if (error) {
+                    throw error;
+                }
+
+                // If login is successful
+                switchToAuthenticatedView(data.user);
+            } catch (error) {
+                loginError.textContent = error.message || 'Erro no login';
+            }
+        }
+
+        function switchToAuthenticatedView(user) {
+            authPages.style.display = 'none';
+            dashboardPage.style.display = 'flex';
+            userInfo.textContent = `Bem-vindo, ${user.user_metadata?.full_name || user.email}`;
+            
+            // Load initial records
+            fetchRecords();
+        }
+
+        async function logout() {
+            try {
+                await supabase.auth.signOut();
+                dashboardPage.style.display = 'none';
+                authPages.style.display = 'block';
+                loginPage.style.display = 'block';
+                signupPage.style.display = 'none';
+            } catch (error) {
+                console.error('Erro ao fazer logout:', error);
+            }
+        }
+
+        // Check current session on page load
+        async function checkSession() {
+            const { data: { session } } = await supabase.auth.getSession();
+            
+            if (session) {
+                switchToAuthenticatedView(session.user);
+            } else {
+                authPages.style.display = 'block';
+                loginPage.style.display = 'block';
+            }
+        }
+
+        // Existing dashboard functions with slight modifications
+        function formatDateTime(dateString) {
+            if (!dateString) return 'N/A';
+            
+            const date = new Date(dateString);
+            const day = date.getDate().toString().padStart(2, '0');
+            const month = (date.getMonth() + 1).toString().padStart(2, '0');
+            const year = date.getFullYear();
+            const hours = date.getHours().toString().padStart(2, '0');
+            const minutes = date.getMinutes().toString().padStart(2, '0');
+            
+            return `${day}/${month}/${year} ${hours}:${minutes}`;
+        }
+
+        function toggleLoading(show) {
+            loadingPage.style.display = show ? 'flex' : 'none';
+        }
+
+        function renderTable(records) {
+    const tableBody = document.getElementById('tableBody');
+    const tableHeader = document.getElementById('tableHeader');
+
+    // Extrai todas as chaves únicas dos registros para montar os cabeçalhos
+    const recordHeaders = Array.from(
+        new Set(records.flatMap(record => Object.keys(record)))
+    );
+
+    /// Adiciona os cabeçalhos extras e remove "created_at" e "id"
+const headers = [
+    ...recordHeaders.filter(header => header !== 'created_at' && header !== 'id'), 
+    'Tempo total', 
+    'Performance Ceva'
+];
+
+
+    // Renderiza os cabeçalhos da tabela
+    tableHeader.innerHTML = '';
+    headers.forEach(header => {
+        const th = document.createElement('th');
+        th.textContent = header;
+        tableHeader.appendChild(th);
+    });
+
+    // Limpa o corpo da tabela
+    tableBody.innerHTML = '';
+
+    // Processa e renderiza os registros
+    records.forEach(record => {
+        const row = document.createElement('tr');
+
+        // Verifica o status para determinar se "Performance Ceva" e "Tempo total" devem ser calculados
+        const status = record['Status'];
+
+        // Calcula "Performance Ceva" e "Tempo total", mas ignora se o status for "Cancelado"
+        let PerformanceCeva = '';
+        let tempoTotal = '';
+        let dataFinalizacao = record['Data da finalização'] ? new Date(record['Data da finalização']) : null;
+
+        // Se o status for "Cancelado", torna "Performance Ceva", "Tempo total" e "Data da finalização" vazios
+        if (status !== 'Cancelado') {
+            const dataSolicitada = record['Data solicitada'] ? new Date(record['Data solicitada']) : null;
+            const dataCorte = record['Data e hora do corte'] ? new Date(record['Data e hora do corte']) : null;
+
+            // Cálculo de "Performance Ceva" (No prazo ou Fora do prazo)
+            if (dataFinalizacao && dataCorte) {
+                PerformanceCeva = dataFinalizacao <= dataCorte ? 'No prazo' : 'Fora do prazo';
+            }
+
+            // Cálculo de "Tempo total"
+            if (dataFinalizacao && dataSolicitada) {
+                tempoTotal = calculateTimeDifference(dataSolicitada, dataFinalizacao);
+            }
+        } else {
+            // Se o status for "Cancelado", torna a "Data da finalização" vazia
+            dataFinalizacao = null;
+        }
+
+        // Adiciona as células à linha
+        headers.forEach(header => {
+            const cell = document.createElement('td');
+            let cellValue;
+
+            switch (header) {
+                case 'Performance Ceva':
+                    cellValue = PerformanceCeva;
+                    break;
+                case 'Tempo total':
+                    cellValue = tempoTotal;
+                    break;
+                case 'Data da finalização':
+                    cellValue = dataFinalizacao ? formatDateTime(dataFinalizacao) : ''; // Deixa vazio se for "Cancelado"
+                    break;
+                default:
+                    // Verifica se é uma coluna de data
+                    const isDateColumn = ['data', 'horario', 'date', 'time'].some(
+                        dateKeyword => header.toLowerCase().includes(dateKeyword)
+                    );
+
+                    cellValue = record[header];
+                    if (isDateColumn && cellValue) {
+                        cellValue = formatDateTime(cellValue);
+                    } else if (cellValue != null) {
+                        cellValue = typeof cellValue === 'object'
+                            ? JSON.stringify(cellValue)
+                            : cellValue.toString();
+                    } else {
+                        cellValue = ''; // Mantém o campo vazio
+                    }
+                    break;
+            }
+
+            // Adiciona classe CSS dinâmica para a coluna "Status"
+            if (header === 'Status') {
+                cell.classList.add(`status-${cellValue.toLowerCase()}`);
+            }
+
+            cell.textContent = cellValue;
+            row.appendChild(cell);
+        });
+
+        tableBody.appendChild(row);
+    });
+}
+
+// Função para calcular a diferença de tempo entre duas datas
+function calculateTimeDifference(startDate, endDate) {
+    const diffMs = endDate - startDate; // diferença em milissegundos
+    const hours = Math.floor(diffMs / (1000 * 60 * 60));
+    const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((diffMs % (1000 * 60)) / 1000);
+
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+}
+
+// Função para formatar data e hora
+function formatDateTime(dateTime) {
+    if (dateTime instanceof Date) {
+        return dateTime.toLocaleString('pt-BR');
+    }
+    return dateTime; // Se não for um objeto Date, retorna o valor original
+}
+
+
+// Função para formatar data e hora no padrão "dd/MM/yyyy HH:mm:ss"
+function formatDateTime(value) {
+    const date = new Date(value);
+    if (isNaN(date)) return '';
+
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const year = date.getFullYear();
+    const hours = date.getHours().toString().padStart(2, '0');
+    const minutes = date.getMinutes().toString().padStart(2, '0');
+    const seconds = date.getSeconds().toString().padStart(2, '0');
+
+    return `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
+}
+
+// Função para calcular a diferença de tempo
+function calculateTimeDifference(startDate, endDate) {
+    const diffMs = endDate - startDate;
+    const horas = Math.floor(diffMs / (1000 * 60 * 60));
+    const minutos = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+    const segundos = Math.floor((diffMs % (1000 * 60)) / 1000);
+    return `${horas.toString().padStart(2, '0')}:${minutos.toString().padStart(2, '0')}:${segundos.toString().padStart(2, '0')}`;
+}
+
+        
+
+        function searchRecords() {
+            const searchInput = document.getElementById('searchInput');
+            const searchTerm = searchInput.value.toLowerCase().trim();
+            
+            if (!searchTerm) {
+                // If search is empty, show all records
+                renderTable(allRecords);
+                return;
+            }
+            
+            // Filter records
+            const filteredRecords = allRecords.filter(record => 
+                headers.some(header => {
+                    let value = record[header];
+                    
+                    // Convert to string for comparison
+                    if (value === null || value === undefined) return false;
+                    value = value.toString().toLowerCase();
+                    
+                    return value.includes(searchTerm);
+                })
+            );
+            
+            renderTable(filteredRecords);
+        }
+
+
+        // Função para fazer dowload do arquivo Csv
+        function downloadCSV() {
+    // Prepare CSV content
+    const csvRows = [];
+
+    // Adiciona os cabeçalhos, incluindo as novas colunas "Tempo total" e "Performance Ceva"
+    const extendedHeaders = [...headers, 'Tempo total', 'Performance Ceva'];
+    csvRows.push(extendedHeaders.join(','));
+
+    // Adiciona as linhas de dados, incluindo os cálculos de "Tempo total" e "Performance Ceva"
+    allRecords.forEach(record => {
+        const row = extendedHeaders.map(header => {
+            let value;
+
+            // Verifica se a coluna "Status" está com "Cancelado"
+            const status = record['Status'] ? record['Status'].toLowerCase() : '';
+
+            if (status === 'cancelado') {
+                // Se o Status for "Cancelado", as colunas "Data da finalização", "Tempo total" e "Performance Ceva" ficam vazias
+                if (header === 'Data da finalização' || header === 'Tempo total' || header === 'Performance Ceva') {
+                    return '';
+                }
+            }
+
+            // Calcula "Performance Ceva" (No prazo ou Fora do prazo)
+            if (header === 'Performance Ceva') {
+                const dataSolicitada = record['Data solicitada'] ? new Date(record['Data solicitada']) : null;
+                const dataFinalizacao = record['Data da finalização'] ? new Date(record['Data da finalização']) : null;
+                const dataCorte = record['Data e hora do corte'] ? new Date(record['Data e hora do corte']) : null;
+
+                value = (dataFinalizacao && dataCorte)
+                    ? (dataFinalizacao <= dataCorte ? 'No prazo' : 'Fora do prazo')
+                    : '';
+            } else if (header === 'Tempo total') {
+                // Calcula "Tempo total"
+                const dataSolicitada = record['Data solicitada'] ? new Date(record['Data solicitada']) : null;
+                const dataFinalizacao = record['Data da finalização'] ? new Date(record['Data da finalização']) : null;
+                
+                value = (dataFinalizacao && dataSolicitada)
+                    ? calculateTimeDifference(dataSolicitada, dataFinalizacao)
+                    : '';
+            } else {
+                // Para as outras colunas, simplesmente obtém o valor
+                value = record[header];
+                
+                // Lida com valores nulos ou indefinidos
+                if (value === null || value === undefined) return '';
+                
+                // Converte para string e lida com as vírgulas
+                value = value.toString().replace(/"/g, '""');
+                
+                // Se o valor contiver vírgulas, coloca entre aspas
+                return value.includes(',') ? `"${value}"` : value;
+            }
+
+            return value;
+        });
+
+        csvRows.push(row.join(','));
+    });
+
+    // Cria o conteúdo CSV
+    const csvContent = csvRows.join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'registros.csv');
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+// Função para calcular a diferença de tempo entre duas datas
+function calculateTimeDifference(startDate, endDate) {
+    const diffMs = endDate - startDate; // Diferença em milissegundos
+    const hours = Math.floor(diffMs / (1000 * 60 * 60));
+    const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((diffMs % (1000 * 60)) / 1000);
+
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+}
+
+        async function fetchRecords() {
+            const errorMessage = document.getElementById('error-message');
+            const tableHeader = document.getElementById('tableHeader');
+            const fetchButton = document.getElementById('fetchButton');
+            const downloadButton = document.getElementById('downloadButton');
+            const lastUpdateElement = document.getElementById('lastUpdate');
+
+            // Clear error messages and previous data
+            errorMessage.textContent = '';
+            tableHeader.innerHTML = '';
+            fetchButton.disabled = true;
+            downloadButton.disabled = true;
+            toggleLoading(true);
+
+            try {
+                // Check user's authentication
+                const { data: { session } } = await supabase.auth.getSession();
+                if (!session) {
+                    throw new Error('Usuário não autenticado');
+                }
+
+                // Fetch all records from the Registros table
+                const { data, error } = await supabase
+                    .from('Registros')
+                    .select('*');
+
+                if (error) {
+                    throw error;
+                }
+
+                if (!data || data.length === 0) {
+                    errorMessage.textContent = 'Nenhum registro encontrado. Verifique a tabela e as permissões.';
+                    return;
+                }
+
+                // Filter columns (remove created_at)
+                headers = Object.keys(data[0])
+                    .filter(header => header !== 'created_at');
+
+                // Create header dynamically
+                headers.forEach(header => {
+                    const th = document.createElement('th');
+                    th.textContent = header;
+                    tableHeader.appendChild(th);
+                });
+
+                // Store records globally
+                allRecords = data;
+
+                // Render table
+                renderTable(allRecords);
+
+                // Update last update time
+                const now = new Date();
+                const formattedNow = formatDateTime(now.toISOString());
+                lastUpdateElement.textContent = `Última atualização: ${formattedNow}`;
+
+                // Enable buttons
+                fetchButton.disabled = false;
+                downloadButton.disabled = false;
+            } catch (error) {
+                console.error('Erro detalhado:', error);
+                errorMessage.textContent = `Erro crítico: ${error.message || 'Falha ao carregar registros'}. Verifique a conexão e as configurações do Supabase.`;
+            } finally {
+                toggleLoading(false);
+            }
+        }
+
+        // Event Listeners
+        signupForm.addEventListener('submit', signUp);
+        loginForm.addEventListener('submit', login);
+        logoutButton.addEventListener('click', logout);
+
+        const fetchButton = document.getElementById('fetchButton');
+        const downloadButton = document.getElementById('downloadButton');
+        const searchInput = document.getElementById('searchInput');
+
+        fetchButton.addEventListener('click', fetchRecords);
+        downloadButton.addEventListener('click', downloadCSV);
+        searchInput.addEventListener('input', searchRecords);
+
+        // Initialize on page load
+        checkSession();
+    </script>
+</body>
+</html>
